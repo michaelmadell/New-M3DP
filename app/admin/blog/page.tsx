@@ -20,7 +20,12 @@ function buildHref(params: Record<string, string | undefined>) {
 export default async function AdminBlogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ published?: string; q?: string; page?: string; take?: string }>;
+  searchParams: Promise<{
+    published?: string;
+    q?: string;
+    page?: string;
+    take?: string;
+  }>;
 }) {
   const params = await searchParams;
 
@@ -72,14 +77,19 @@ export default async function AdminBlogPage({
           <div className="text-xs tracking-[0.3em] font-bold text-[var(--color-muted)]">
             [ ADMIN / BLOG ]
           </div>
-          <h1 className="text-3xl font-bold text-[var(--color-fg)] mt-2">Blog Posts</h1>
+          <h1 className="text-3xl font-bold text-[var(--color-fg)] mt-2">
+            Blog Posts
+          </h1>
           <p className="text-sm text-[var(--color-fg)]/70 mt-2">
             Search, publish, and edit posts.
           </p>
         </div>
 
         <div className="flex flex-col items-stretch gap-2 md:items-end">
-          <form action="/admin/blog" className="flex flex-wrap gap-2 justify-end">
+          <form
+            action="/admin/blog"
+            className="flex flex-wrap gap-2 justify-end"
+          >
             <input type="hidden" name="published" value={published ?? ""} />
 
             <input
@@ -114,7 +124,11 @@ export default async function AdminBlogPage({
           </form>
 
           <div className="flex flex-wrap gap-2 justify-end">
-            <Button asChild variant={!published ? "digital" : "outline"} size="sm">
+            <Button
+              asChild
+              variant={!published ? "digital" : "outline"}
+              size="sm"
+            >
               <Link
                 href={buildHref({
                   q: q || undefined,
@@ -126,7 +140,11 @@ export default async function AdminBlogPage({
               </Link>
             </Button>
 
-            <Button asChild variant={published === "true" ? "digital" : "outline"} size="sm">
+            <Button
+              asChild
+              variant={published === "true" ? "digital" : "outline"}
+              size="sm"
+            >
               <Link
                 href={buildHref({
                   published: "true",
@@ -139,7 +157,11 @@ export default async function AdminBlogPage({
               </Link>
             </Button>
 
-            <Button asChild variant={published === "false" ? "digital" : "outline"} size="sm">
+            <Button
+              asChild
+              variant={published === "false" ? "digital" : "outline"}
+              size="sm"
+            >
               <Link
                 href={buildHref({
                   published: "false",
@@ -176,15 +198,22 @@ export default async function AdminBlogPage({
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {pagePosts.map((p) => (
-              <div key={p.id} className="grid grid-cols-12 gap-3 px-4 py-3 items-center">
+              <div
+                key={p.id}
+                className="grid grid-cols-12 gap-3 px-4 py-3 items-center"
+              >
                 <div className="col-span-5 min-w-0">
-                  <div className="font-bold text-[var(--color-fg)] truncate">{p.title}</div>
+                  <div className="font-bold text-[var(--color-fg)] truncate">
+                    {p.title}
+                  </div>
                   <div className="text-xs text-[var(--color-fg)]/50">
                     {new Date(p.createdAt).toLocaleString("en-GB")}
                   </div>
                 </div>
 
-                <div className="col-span-3 text-[var(--color-fg)]/70 truncate">{p.slug}</div>
+                <div className="col-span-3 text-[var(--color-fg)]/70 truncate">
+                  {p.slug}
+                </div>
 
                 <div className="col-span-2">
                   <span
@@ -201,7 +230,14 @@ export default async function AdminBlogPage({
 
                 <div className="col-span-2 flex justify-end gap-2">
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/blog/${p.slug}`} target="_blank">
+                    <Link
+                      href={
+                        p.isPublished
+                          ? `/blog/${p.slug}`
+                          : `/blog/${p.slug}?preview=1`
+                      }
+                      target="_blank"
+                    >
                       View
                     </Link>
                   </Button>
@@ -234,7 +270,12 @@ export default async function AdminBlogPage({
           Page {safePage} / {totalPages}
         </div>
 
-        <Button asChild variant="outline" size="sm" disabled={safePage >= totalPages}>
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          disabled={safePage >= totalPages}
+        >
           <Link
             aria-disabled={safePage >= totalPages}
             href={buildHref({
