@@ -29,6 +29,10 @@ const navConfig = {
       title: "About",
     },
     {
+        href: "/contact",
+        title: "Contact",
+    },
+    {
       href: "/quote",
       title: "Get Quote",
     },
