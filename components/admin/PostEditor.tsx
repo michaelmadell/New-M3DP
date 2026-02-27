@@ -185,6 +185,22 @@ export function PostEditor({
 
       <MarkdownEditor value={content} onChange={setContent} />
 
+      <div className="flex flex-wrap gap-2">
+        <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+                const finalSlug = (slug || "").trim() ||
+                  title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                if (!finalSlug) return alert("Add a title or slug first.");
+                const url = isPublished ? `/blog/${finalSlug}` : `/blog/${finalSlug}?preview=1`;
+                window.open(url, "_blank", "noopener,noreferrer");
+            }}
+        >
+            Preview
+        </Button>
+      </div>
+
       <Button variant="digital" onClick={save} disabled={saving}>
         {saving ? "Saving..." : mode === "create" ? "Create post" : "Save changes"}
       </Button>

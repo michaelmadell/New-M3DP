@@ -1,16 +1,28 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+import { requireAdminSession } from "@/lib/adminSession";
 
 export default async function BlogPostPage({
   params,
+  searchParams
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
 }) {
   const { slug } = await params;
+  const sp = await searchParams;
+
+  const wantsPreview = sp.preview === "1" || sp.preview === "true";
+  const isAdmin = wantsPreview ? requireAdminSession() : false;
 
   const post = await prisma.post.findFirst({
-    where: { slug, isPublished: true },
+    where: {
+        slug,
+        ...(isAdmin ? {} : { isPublished: true }),
+    }
   });
 
   if (!post) notFound();
@@ -26,7 +38,15 @@ export default async function BlogPostPage({
           <div className="text-sm text-[var(--color-fg)]/60">
             {new Date(post.publishedAt).toLocaleString("en-GB")}
           </div>
-        ) : null}
+        ) : (
+            <span>Draft</span>
+        )}
+
+        {isAdmin && !post.isPublished ? (
+            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase border border-[var(--analog-amber)] text-[var(--analog-amber)] bg-[var(--analog-amber)]/10">
+                PREVIEW
+            </span>
+        ): null}
       </header>
 
       {post.coverImage ? (
@@ -40,6 +60,8 @@ export default async function BlogPostPage({
 
       <article className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur tech-grid p-6">
         <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
           components={{
             h1: ({ children, ...props }) => (
               <h2
@@ -145,6 +167,32 @@ export default async function BlogPostPage({
                 alt={props.alt ?? ""}
               />
             ),
+            table: ({ children, ...props }) => (
+                <div className="mt-6 overflow-x-auto">
+                    <table
+                        {...props}
+                        className="w-full border border-[var(--color-border)] text-sm">
+                        {children}
+                    </table>
+                </div>
+            ),
+            thead: ({ children, ...props }) => (
+                <thead {...props} className="bg-[var(--color-surface-2)]/40">
+                    {children}
+                </thead>
+            ),
+            th: ({ children, ...props }) => (
+                <th
+                    {...props}
+                    className="border-b border-[var(--color-border)] px-3 py-2 text-left font-bold text-[var(--color-fg)]">
+                    {children}
+                </th>
+            ),
+            td: ({ children, ...props }) => (
+                <td {...props} className="border-t border-[var(--color-border)] px-3 py-2">
+                    {children}
+                </td>
+            )
           }}
         >
           {post.content}

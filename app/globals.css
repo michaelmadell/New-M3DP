@@ -100,6 +100,30 @@
     position: relative;
     z-index: 4;
   }
+
+  .hljs {
+    background: transparent;
+    color: inherit;
+  }
+  .hljs-keyword,
+  .hljs-selector-tag,
+  .hljs-literal,
+  .hljs-section,
+  .hljs-link {
+    color: var(--digital-cyan);
+  }
+  .hljs-string,
+  .hljs-title,
+  .hljs-name,
+  .hljs-type,
+  .hljs-attribute {
+    color: var(--analog-amber);
+  }
+  .hljs-comment,
+  .hljs-quote {
+    color: color-mix(in srgb, var(--color-fg) 45%, transparent);
+    font-style: italic;
+  }
 }
 
 @layer base {
