@@ -5,7 +5,7 @@ import path from "path";
 import crypto from "node:crypto";
 
 export async function POST(req: Request) {
-  if (!requireAdminSession()) {
+  if (!(await requireAdminSession())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

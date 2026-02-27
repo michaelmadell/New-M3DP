@@ -16,7 +16,7 @@ export default async function BlogPostPage({
   const sp = await searchParams;
 
   const wantsPreview = sp.preview === "1" || sp.preview === "true";
-  const isAdmin = wantsPreview ? requireAdminSession() : false;
+  const isAdmin = wantsPreview ? await requireAdminSession() : false;
 
   const post = await prisma.post.findFirst({
     where: {

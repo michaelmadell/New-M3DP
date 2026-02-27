@@ -7,7 +7,7 @@ function badRequest(message: string) {
 }
 
 export async function GET(req: Request) {
-  if (!requireAdminSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await requireAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const published = searchParams.get("published"); // "true" | "false" | null
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!requireAdminSession()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await requireAdminSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as
     | {
