@@ -190,8 +190,7 @@ export function PostEditor({
             type="button"
             variant="outline"
             onClick={() => {
-                const finalSlug = (slug || "").trim() ||
-                  title.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                const finalSlug = slug.trim() || slugify(title);
                 if (!finalSlug) return alert("Add a title or slug first.");
                 const url = isPublished ? `/blog/${finalSlug}` : `/blog/${finalSlug}?preview=1`;
                 window.open(url, "_blank", "noopener,noreferrer");
