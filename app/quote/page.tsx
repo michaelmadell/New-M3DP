@@ -1,159 +1,180 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Model3DViewer from '@/components/Model3DViewer'
+import { useState } from "react";
+import Model3DViewer from "@/components/Model3DViewer";
+import { Button } from "@/components/Button";
 
 interface UploadedFile {
-  name: string
-  size: number
-  type: string
-  data: ArrayBuffer
+  name: string;
+  size: number;
+  type: string;
+  data: ArrayBuffer;
 }
 
 export default function QuotePage() {
-  const [files, setFiles] = useState<UploadedFile[]>([])
+  const [files, setFiles] = useState<UploadedFile[]>([]);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    message: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files
-    if (!selectedFiles) return
+    const selectedFiles = e.target.files;
+    if (!selectedFiles) return;
 
-    const newFiles: UploadedFile[] = []
-    
+    const newFiles: UploadedFile[] = [];
+
     for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i]
-      const data = await file.arrayBuffer()
-      
+      const file = selectedFiles[i];
+      const data = await file.arrayBuffer();
+
       newFiles.push({
         name: file.name,
         size: file.size,
         type: file.type,
         data,
-      })
+      });
     }
-    
-    setFiles([...files, ...newFiles])
-  }
+
+    setFiles([...files, ...newFiles]);
+  };
 
   const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index))
-  }
+    setFiles(files.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitting(true)
+    e.preventDefault();
+    setSubmitting(true);
 
     try {
-      // Create FormData for file uploads
-      const submitData = new FormData()
-      submitData.append('name', formData.name)
-      submitData.append('email', formData.email)
-      submitData.append('phone', formData.phone)
-      submitData.append('message', formData.message)
-      
-      // Add files to FormData
-      files.forEach((file, index) => {
-        const blob = new Blob([file.data])
-        submitData.append(`file_${index}`, blob, file.name)
-      })
+      const submitData = new FormData();
+      submitData.append("name", formData.name);
+      submitData.append("email", formData.email);
+      submitData.append("phone", formData.phone);
+      submitData.append("message", formData.message);
 
-      const response = await fetch('/api/quotes', {
-        method: 'POST',
+      files.forEach((file, index) => {
+        const blob = new Blob([file.data]);
+        submitData.append(`file_${index}`, blob, file.name);
+      });
+
+      const response = await fetch("/api/quotes", {
+        method: "POST",
         body: submitData,
-      })
+      });
 
       if (response.ok) {
-        setSubmitted(true)
-        setFormData({ name: '', email: '', phone: '', message: '' })
-        setFiles([])
+        setSubmitted(true);
+        setFormData({ name: "", email: "", phone: "", message: "" });
+        setFiles([]);
       } else {
-        alert('Failed to submit quote request. Please try again.')
+        alert("Failed to submit quote request. Please try again.");
       }
     } catch (error) {
-      console.error('Error submitting quote:', error)
-      alert('An error occurred. Please try again.')
+      console.error("Error submitting quote:", error);
+      alert("An error occurred. Please try again.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const getFileExtension = (filename: string): string => {
-    return filename.split('.').pop()?.toLowerCase() || ''
-  }
+    return filename.split(".").pop()?.toLowerCase() || "";
+  };
 
   if (submitted) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-8">
-          <div className="text-green-600 text-5xl mb-4">✓</div>
-          <h2 className="text-2xl font-bold mb-4">Quote Request Submitted!</h2>
-          <p className="text-gray-600 mb-6">
-            Thank you for your quote request. We'll review your files and get back to you within 24-48 hours.
+        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8">
+          <div className="text-[var(--digital-cyan)] text-5xl mb-4">✓</div>
+          <h2 className="text-2xl font-bold mb-3 text-[var(--color-fg)]">
+            Quote Request Submitted!
+          </h2>
+          <p className="text-[var(--color-fg)]/70 mb-6">
+            Thank you for your quote request. We'll review your files and get
+            back to you within 24–48 hours.
           </p>
-          <button
-            onClick={() => setSubmitted(false)}
-            className="btn btn-primary"
-          >
+
+          <Button variant="digital" onClick={() => setSubmitted(false)}>
             Submit Another Quote
-          </button>
+          </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-16">
-      <h1 className="text-4xl font-bold mb-8">Request a Custom 3D Print Quote</h1>
-      
+      <div className="mb-10">
+        <div className="text-xs tracking-[0.3em] font-bold text-[var(--color-muted)]">
+          [ CUSTOM QUOTE ]
+        </div>
+        <h1 className="text-4xl sm:text-5xl font-bold mt-2 text-[var(--color-fg)]">
+          Request a Custom 3D Print Quote
+        </h1>
+        <p className="text-[var(--color-fg)]/70 mt-3 max-w-3xl">
+          Upload your 3D model files (STL, OBJ, 3MF, STEP) and we’ll provide a
+          detailed quote including material options, print time, and pricing.
+        </p>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-8">
         <div>
-          <p className="text-gray-600 mb-6">
-            Upload your 3D model files (STL, OBJ, 3MF, STEP) and we'll provide you with a detailed quote
-            including material options, print time, and pricing.
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-6 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6"
+          >
             <div>
-              <label className="block text-sm font-medium mb-2">Name *</label>
+              <label className="block text-sm font-bold mb-2 text-[var(--color-fg)]/80">
+                Name <span className="text-[var(--analog-amber)]">*</span>
+              </label>
               <input
                 type="text"
                 required
                 className="input"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Email *</label>
+              <label className="block text-sm font-bold mb-2 text-[var(--color-fg)]/80">
+                Email <span className="text-[var(--analog-amber)]">*</span>
+              </label>
               <input
                 type="email"
                 required
                 className="input"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Phone</label>
+              <label className="block text-sm font-bold mb-2 text-[var(--color-fg)]/80">
+                Phone
+              </label>
               <input
                 type="tel"
                 className="input"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className="block text-sm font-bold mb-2 text-[var(--color-fg)]/80">
                 Additional Details
               </label>
               <textarea
@@ -161,76 +182,122 @@ export default function QuotePage() {
                 className="input"
                 placeholder="Quantity, material preferences, deadline, etc."
                 value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, message: e.target.value })
+                }
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Upload 3D Files (STL, OBJ, 3MF, STEP)
+              <label className="block text-sm font-bold mb-2 text-[var(--color-fg)]/80">
+                Upload 3D Files <span className="text-[var(--color-fg)]/50">(required)</span>
               </label>
+
               <input
-                title='Upload File(s)'
+                title="Upload File(s)"
                 type="file"
                 multiple
                 accept=".stl,.obj,.3mf,.step,.stp"
                 onChange={handleFileUpload}
-                className="block btn w-full text-sm text-[var(--color-primary-foreground)] file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[var(--color-secondary)] file:text-[var(--color-secondary-foreground)] hover:file:bg-[var(--color-primary)] hover:file:cursor-pointer hover:file:text-[var(--color-primary-foreground)]"
+                className={[
+                  "block w-full text-sm",
+                  "file:mr-4 file:h-11 file:px-5 file:rounded-md file:border-0",
+                  "file:font-bold file:uppercase file:tracking-widest",
+                  "file:bg-[var(--color-secondary)] file:text-[var(--color-bg)]",
+                  "hover:file:bg-[var(--color-primary)]",
+                  "file:cursor-pointer",
+                  "text-[var(--color-fg)]/70",
+                ].join(" ")}
               />
+              <p className="mt-2 text-xs text-[var(--color-fg)]/60">
+                Supported: STL, OBJ, 3MF, STEP. Upload at least one file to submit.
+              </p>
             </div>
 
             {files.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">Uploaded Files:</p>
-                {files.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between bg-[var(--color-secondary)] p-3 rounded">
-                    <span className="text-sm text-[var(--color-secondary-foreground)]">{file.name} ({(file.size / 1024).toFixed(2)} KB)</span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(index)}
-                      className="text-[var(--color-secondary-foreground)] hover:text-[var(--color-destructive)] bg-[var(--color-destructive)] hover:bg-red-100 hover:cursor-pointer rounded px-2 py-1 transition duration-300 ease-in-out hover:shadow hover:shadow-[var(--color-destructive)] text-sm"
+                <p className="text-sm font-bold text-[var(--color-fg)]/80">
+                  Uploaded Files
+                </p>
+
+                <div className="space-y-2">
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between gap-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] p-3 rounded-lg"
                     >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+                      <span className="text-sm text-[var(--color-fg)]/80 truncate">
+                        {file.name}{" "}
+                        <span className="text-[var(--color-fg)]/50">
+                          ({(file.size / 1024).toFixed(2)} KB)
+                        </span>
+                      </span>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        className="shrink-0 border-[var(--analog-amber)] text-[var(--analog-amber)] hover:bg-[var(--analog-amber)] hover:text-[var(--tech-slate)]"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
+              variant="digital"
+              className="w-full"
               disabled={submitting || files.length === 0}
-              className="btn bg-[var(--color-primary)] text-[var(--color-primary-foreground)] hover:bg-[var(--color-primary)] hover:text-[var(--color-primary-foreground)] hover:shadow hover:shadow-[var(--color-primary)]  hover:cursor-pointer transition duration-300 ease-in-out w-full disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-disabled={submitting || files.length === 0}
             >
-              {submitting ? 'Submitting...' : 'Submit Quote Request'}
-            </button>
+              {submitting ? "Submitting..." : "Submit Quote Request"}
+            </Button>
           </form>
         </div>
 
-        <div>
-          {files.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4">3D Preview</h3>
-              <Model3DViewer 
-                modelData={files[0].data} 
+        <div className="space-y-4">
+          {files.length > 0 ? (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4">
+              <h3 className="text-sm font-bold tracking-wider uppercase text-[var(--color-fg)]/80 mb-3">
+                3D Preview
+              </h3>
+
+              <Model3DViewer
+                modelData={files[0].data}
                 fileType={getFileExtension(files[0].name)}
               />
-              <p className="text-sm text-[var(--color-foreground)] mt-2 text-center">
-                Showing: {files[0].name}
+
+              <p className="text-xs text-[var(--color-fg)]/60 mt-3 text-center">
+                Showing: <span className="text-[var(--color-fg)]/80">{files[0].name}</span>
               </p>
             </div>
-          )}
-          
-          {files.length === 0 && (
-            <div className="bg-[var(--color-surface)] rounded-lg p-8 text-center h-96 flex items-center justify-center">
+          ) : (
+            <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8 text-center h-96 flex items-center justify-center">
               <div>
-                <p className="text-gray-500 mb-2">Upload a 3D file to see preview</p>
-                <p className="text-sm text-gray-400">Supported: STL, OBJ, 3MF, STEP</p>
+                <p className="text-[var(--color-fg)]/70 mb-2">
+                  Upload a 3D file to see a preview
+                </p>
+                <p className="text-sm text-[var(--color-fg)]/50">
+                  Supported: STL, OBJ, 3MF, STEP
+                </p>
               </div>
             </div>
           )}
+
+          {/* Optional helper CTA */}
+          <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-xl p-5">
+            <p className="text-sm text-[var(--color-fg)]/70">
+              Not sure what to upload? Send what you have (STL/STEP preferred) and add
+              notes about material, quantity, and deadline.
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

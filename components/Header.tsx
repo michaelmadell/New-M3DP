@@ -93,12 +93,12 @@ export function Header() {
     themePreference.charAt(0).toUpperCase() + themePreference.slice(1);
 
   return (
-    <header className="border-b border-border w-full sticky top-0 z-50 bg-[var(--color-surface)]/80 backdrop-blur supports-backdrop-filter:bg-background/90">
+    <header className="w-full sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-surface)]/85 backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 border-2 bg-[var(--color-primary)]/10 border-[var(--color-primary)] flex items-center justify-center font-bold text-[var(--color-primary)] group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-primary-foreground)] transition-all">
+            <div className="w-12 h-12 border-2 bg-[var(--color-primary)]/10 border-[var(--color-primary)] flex items-center justify-center font-bold text-[var(--color-primary)] group-hover:bg-[var(--color-primary)] group-hover:text-[var(--color-bg)] transition-all">
               M3DP
             </div>
             <div className="font-bold text-lg">
@@ -109,16 +109,23 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <div className="flex items-center gap-3 md:gap-6">
-            <nav className="hidden md:flex items-center space-x-8">
-              {navConfig.mainNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`${item.href === "/quote" ? "btn btn-digital py-2 px-4 text-xs" : "text-sm font-medium transition-colors hover:text-primary"}`}
-                >
-                  {item.title}
-                </Link>
-              ))}
+            <nav className="hidden md:flex items-center gap-6">
+              {navConfig.mainNav.map((item) => {
+                const isQuote = item.href === "/quote";
+                return isQuote ? (
+                  <Button key={item.href} asChild variant="digital" size="sm">
+                    <Link href={item.href}>Get Quote</Link>
+                  </Button>
+                ) : (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="text-sm font-medium text-[var(--color-fg)]/80 hover:text-[var(--color-fg)] transition-colors"
+                  >
+                    {item.title}
+                  </Link>
+                );
+              })}
             </nav>
 
             <Button
@@ -127,7 +134,7 @@ export function Header() {
               onClick={toggleTheme}
               aria-label="Toggle theme mode"
               title={`Theme: ${themePreference}. Click to switch mode.`}
-              className="border border-border text-foreground gap-2 px-3"
+              className="border border-[var(--color-border)] text-[var(--color-fg)] hover:bg-[var(--color-surface-2)] gap-2 px-3"
             >
               {themePreference === "system" ? (
                 <Monitor size={18} />
@@ -157,18 +164,36 @@ export function Header() {
         </div>
       </div>
       {mobileMenuOpen && (
-        <div className="absolute right-4 top-20 w-48 bg-[var(--color-surface)]/80 border border-border rounded-lg shadow-lg animate-slide-in-down md:hidden">
-          <nav className="flex flex-col space-y-2 p-4">
-            {navConfig.mainNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${item.href === "/quote" ? "btn btn-digital py-1 text-sm" : "text-sm font-medium text-muted hover:text-primary transition-colors tracking-wider uppercase border py-1 border-primary"} text-center`}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.title}
-              </Link>
-            ))}
+        <div className="absolute right-4 top-20 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-lg md:hidden overflow-hidden">
+          <nav className="flex flex-col p-2">
+            {navConfig.mainNav.map((item) => {
+              const isQuote = item.href === "/quote";
+              return isQuote ? (
+                <Button
+                  key={item.href}
+                  asChild
+                  variant="digital"
+                  className="w-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Link href={item.href} className="w-full">
+                    {item.title}
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  key={item.href}
+                  asChild
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Link href={item.href} className="w-full">
+                    {item.title}
+                  </Link>
+                </Button>
+              );
+            })}
           </nav>
         </div>
       )}

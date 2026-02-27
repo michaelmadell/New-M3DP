@@ -105,22 +105,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    
-    const quotes = await prisma.quote.findMany({
-      where: status ? { status } : undefined,
-      orderBy: { createdAt: 'desc' },
-    })
-    
-    return NextResponse.json(quotes)
-  } catch (error) {
-    console.error('Error fetching quotes:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch quotes' },
-      { status: 500 }
-    )
-  }
+export async function GET() {
+  return new Response("Method Not Allowed", { status: 405 });
 }

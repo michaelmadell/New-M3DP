@@ -16,16 +16,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning={true}>
+      <body suppressHydrationWarning={true} className="min-h-screen antialiased">
         {/* Header */}
         <Header />
         
 
         {/* Main Content */}
-        <main>{children}</main>
+        <div className="min-h-[calc(100vh-1px)] flex flex-col">
+          <main className="flex-1">{children}</main>
+        
 
         {/* Footer */}
         <Footer />
+        </div>
       </body>
     </html>
   )
