@@ -11,6 +11,10 @@ const ALLOWED_STATUSES = new Set([
   "declined",
 ]);
 
+function badRequest(message: string) {
+  return NextResponse.json({ error: message }, { status: 400 });
+}
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -40,19 +44,27 @@ export async function PATCH(
     | { status?: string; notes?: string | null; quotedPrice?: number | null }
     | null;
 
-  if (!body) {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  if (!body) return badRequest("Invalid JSON");
 
   if (body.status && !ALLOWED_STATUSES.has(body.status)) {
-    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    return badRequest("Invalid status");
+  }
+
+  if (body.quotedPrice !== undefined && body.quotedPrice !== null) {
+    if (
+      typeof body.quotedPrice !== "number" ||
+      !Number.isFinite(body.quotedPrice) ||
+      body.quotedPrice < 0
+    ) {
+      return badRequest("Invalid quotedPrice");
+    }
   }
 
   const updated = await prisma.quote.update({
     where: { id },
     data: {
-      ...(body.status ? { status: body.status } : {}),
-      ...(body.notes !== undefined ? { notes: body.notes } : {}),
+      ...(body.status !==undefined ? { status: body.status } : {}),
+      ...(body.notes !== undefined ? { notes: body.notes?.trim() } : {}),
       ...(body.quotedPrice !== undefined ? { quotedPrice: body.quotedPrice } : {}),
     },
   });

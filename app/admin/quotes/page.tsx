@@ -214,7 +214,7 @@ export default async function AdminQuotesPage({
                 </Link>
 
                 <div className="col-span-3 text-[var(--color-fg)]/70 truncate">
-                  {qRow.email}
+                  {qRow.customerEmail}
                 </div>
 
                 <div className="col-span-2">
