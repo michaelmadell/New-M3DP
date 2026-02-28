@@ -1,8 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Model3DViewer from "@/components/Model3DViewer";
 import { Button } from "@/components/Button";
+
+type SelectedFile = {
+  id: string;
+  file: File;
+};
+
+const MAX_FILES = 5;
+
+const MAX_FILE_BYTES = 100 * 1024 * 1024; // 100 MB
+
+const ALLOWED_EXT = new Set(["stl", "obj", "3mf", "step", "stp"]);
+
+const PREVIEWABLE_EXT = new Set(["stl"]);
+
+function getExt(filename: string): string {
+  return filename.split(".").pop()?.toLowerCase() || "";
+}
+
+function formatBytes(bytes: number) {
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb.toFixed(2)} MB`;
+  const kb = bytes / 1024;
+  return `${kb.toFixed(2)} KB`;
+}
+
+function validateFile(file: File): string | null {
+  const ext = getExt(file.name);
+  if (!ALLOWED_EXT.has(ext)) {
+    return `Unsupported file type: .${ext || "unknown"}. Allowed: ${[...ALLOWED_EXT].join(", ")}`;
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    return `File too large (${formatBytes(file.size)}). Max ${formatBytes(MAX_FILE_BYTES)}.`;
+  }
+  return null;
+}
 
 interface UploadedFile {
   name: string;
@@ -12,44 +47,111 @@ interface UploadedFile {
 }
 
 export default function QuotePage() {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [files, setFiles] = useState<SelectedFile[]>([]);
+  const [previewFileId, setPreviewFileId] = useState<string | null>(null);
+
+  const [previewBuf, setPreviewBuf] = useState<ArrayBuffer | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [fileErrors, setFileErrors] = useState<string[]>([]);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     message: "",
   });
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const previewFile = useMemo(() => {
+    if (!previewFileId) return null;
+    return files.find((f) => f.id === previewFileId) ?? null;
+  }, [files, previewFileId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setPreviewBuf(null);
+
+      if(!previewFile) return;
+
+      const ext = getExt(previewFile.file.name);
+      if(!PREVIEWABLE_EXT.has(ext)) return;
+
+      setPreviewLoading(true);
+      try {
+        const buf = await previewFile.file.arrayBuffer();
+        if (!cancelled) setPreviewBuf(buf);
+      }finally{
+        if (!cancelled) setPreviewLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    }
+  }, [previewFile]);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = e.target.files;
-    if (!selectedFiles) return;
+    const selected = e.target.files;
+    if (!selected) return;
 
-    const newFiles: UploadedFile[] = [];
+    const nextErrors: string[] = [];
+    const nextFiles: SelectedFile[] = [];
 
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      const data = await file.arrayBuffer();
+    const remainingSlots = Math.max(0, MAX_FILES - files.length);
+    const toTake = Math.min(selected.length, remainingSlots);
 
-      newFiles.push({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        data,
+    if (selected.length > remainingSlots) {
+      nextErrors.push(`You can only upload ${MAX_FILES} files. ${selected.length - remainingSlots} file(s) were not added.`); 
+    }
+
+    for (let i = 0; i < toTake; i++) {
+      const file = selected[i];
+
+      const err = validateFile(file);
+      if (err) {
+        nextErrors.push(`${file.name}: ${err}`);
+        continue;
+      }
+
+      const dupe = files.some((f) => f.file.name === file.name && f.file.size === file.size);
+      if (dupe) {
+        nextErrors.push(`${file.name}: already added.`);
+        continue;
+      }
+
+      nextFiles.push({
+        id: crypto.randomUUID(),
+        file
       });
     }
 
-    setFiles([...files, ...newFiles]);
+    setFileErrors(nextErrors);
+    if(nextFiles.length) setFiles((prev) => [...prev, ...nextFiles]);
+
+    e.currentTarget.value = "";
   };
 
-  const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index));
+  const removeFile = (id: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+    setFileErrors([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    setFileErrors([]);
+
+    if (files.length === 0) {
+      setFileErrors(["Please upload at least one file."]);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const submitData = new FormData();
@@ -58,9 +160,8 @@ export default function QuotePage() {
       submitData.append("phone", formData.phone);
       submitData.append("message", formData.message);
 
-      files.forEach((file, index) => {
-        const blob = new Blob([file.data]);
-        submitData.append(`file_${index}`, blob, file.name);
+      files.forEach(({file}) => {
+        submitData.append("files", file, file.name);
       });
 
       const response = await fetch("/api/quotes", {
@@ -72,20 +173,24 @@ export default function QuotePage() {
         setSubmitted(true);
         setFormData({ name: "", email: "", phone: "", message: "" });
         setFiles([]);
+        setPreviewBuf(null);
+        setPreviewFileId(null);
       } else {
-        alert("Failed to submit quote request. Please try again.");
+        const data = await response.json().catch(() => null);
+        const msg =
+          (data && typeof data.error === "string" && data.error) ||
+          "Failed to submit quote. Please try again.";
+        setFileErrors([msg]);
       }
     } catch (error) {
       console.error("Error submitting quote:", error);
-      alert("An error occurred. Please try again.");
+      setFileErrors(["An error occurred. Please try again."]);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const getFileExtension = (filename: string): string => {
-    return filename.split(".").pop()?.toLowerCase() || "";
-  };
+  const previewExt = previewFile ? getExt(previewFile.file.name) : "";
 
   if (submitted) {
     return (
@@ -210,8 +315,16 @@ export default function QuotePage() {
                 ].join(" ")}
               />
               <p className="mt-2 text-xs text-[var(--color-fg)]/60">
-                Supported: STL, OBJ, 3MF, STEP. Upload at least one file to submit.
+                Supported: STL, OBJ, 3MF, STEP. Up to {MAX_FILES} files. Max{""}
+                {formatBytes(MAX_FILE_BYTES)} each.
               </p>
+              {fileErrors.length > 0 && (
+              <div className="mt-3 rounded-lg border border-[var(--analog-amber)] bg-[var(--analog-amber)]/10 p-3 text-sm text-[var(--color-fg)] space-y-1">
+                {fileErrors.map((e, idx) => (
+                  <div key={idx}>• {e}</div>
+                ))}
+              </div>
+            )}
             </div>
 
             {files.length > 0 && (
@@ -221,29 +334,49 @@ export default function QuotePage() {
                 </p>
 
                 <div className="space-y-2">
-                  {files.map((file, index) => (
+                  {files.map(({id, file}) => {
+                    const ext = getExt(file.name);
+                    const canPreview = PREVIEWABLE_EXT.has(ext);
+                    const isActive = previewFileId === id;
+
+                  return (
                     <div
-                      key={index}
+                      key={id}
                       className="flex items-center justify-between gap-3 bg-[var(--color-surface-2)] border border-[var(--color-border)] p-3 rounded-lg"
                     >
-                      <span className="text-sm text-[var(--color-fg)]/80 truncate">
-                        {file.name}{" "}
-                        <span className="text-[var(--color-fg)]/50">
-                          ({(file.size / 1024).toFixed(2)} KB)
-                        </span>
-                      </span>
-
+                      <div className="min-w-0">
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => removeFile(index)}
-                        className="shrink-0 border-[var(--analog-amber)] text-[var(--analog-amber)] hover:bg-[var(--analog-amber)] hover:text-[var(--tech-slate)]"
+                        onClick={() => setPreviewFileId(id)}
+                        title={canPreview ? "Click to preview" : "Preview not available for this file type"}
+                        className={["text-sm text-left text-[var(--color-fg)]/80 truncate block", canPreview ? "hover:text-[var(--digital-cyan)]" : ""].join(" ")}
                       >
-                        Remove
+                        {file.name}{" "}
+                        <span className="text-[var(--color-fg)]/50">
+                          ({formatBytes(file.size)})
+                        </span>
                       </Button>
+
+                      {!canPreview ? (
+                        <div className="text-xs text-var[(--color-fg)]/50 mt-1">
+                          Preview currently supports STL Only.
+                        </div>
+                      ) : null}
                     </div>
-                  ))}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeFile(id)}
+                      className="shrink-0 border border-[var(--analog-amber)] text-[var(--analog-amber)] hover:bg-[var(--analog-amber)] hover:text-[var(--tech-slate)]"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                  )})}
                 </div>
               </div>
             )}
@@ -261,19 +394,36 @@ export default function QuotePage() {
         </div>
 
         <div className="space-y-4">
-          {files.length > 0 ? (
+          {previewFile ? (
             <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-4">
               <h3 className="text-sm font-bold tracking-wider uppercase text-[var(--color-fg)]/80 mb-3">
                 3D Preview
               </h3>
 
-              <Model3DViewer
-                modelData={files[0].data}
-                fileType={getFileExtension(files[0].name)}
-              />
+              {PREVIEWABLE_EXT.has(previewExt) ? (
+                previewLoading ? (
+                  <div className="h-96 flex items-center justify-center text-sm text-[var(--color-fg)]/60">
+                    Loading preview…
+                  </div>
+                ) : previewBuf ? (
+                  <Model3DViewer modelData={previewBuf} fileType={previewExt} />
+                ) : (
+                  <div className="h-96 flex items-center justify-center text-sm text-[var(--color-fg)]/60">
+                    Preview unavailable.
+                  </div>
+                )
+              ) : (
+                <div className="h-96 flex items-center justify-center text-center text-sm text-[var(--color-fg)]/60 px-6">
+                  Preview currently supports STL only. You can still upload{" "}
+                  {previewExt.toUpperCase()} for quoting.
+                </div>
+              )}
 
               <p className="text-xs text-[var(--color-fg)]/60 mt-3 text-center">
-                Showing: <span className="text-[var(--color-fg)]/80">{files[0].name}</span>
+                Showing:{" "}
+                <span className="text-[var(--color-fg)]/80">
+                  {previewFile.file.name}
+                </span>
               </p>
             </div>
           ) : (
@@ -283,7 +433,7 @@ export default function QuotePage() {
                   Upload a 3D file to see a preview
                 </p>
                 <p className="text-sm text-[var(--color-fg)]/50">
-                  Supported: STL, OBJ, 3MF, STEP
+                  Preview currently supports STL only.
                 </p>
               </div>
             </div>
@@ -292,8 +442,8 @@ export default function QuotePage() {
           {/* Optional helper CTA */}
           <div className="bg-[var(--color-surface-2)] border border-[var(--color-border)] rounded-xl p-5">
             <p className="text-sm text-[var(--color-fg)]/70">
-              Not sure what to upload? Send what you have (STL/STEP preferred) and add
-              notes about material, quantity, and deadline.
+              Not sure what to upload? Send what you have (STL/STEP preferred)
+              and add notes about material, quantity, and deadline.
             </p>
           </div>
         </div>

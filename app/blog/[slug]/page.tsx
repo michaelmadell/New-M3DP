@@ -16,12 +16,12 @@ export default async function BlogPostPage({
   const sp = await searchParams;
 
   const wantsPreview = sp.preview === "1" || sp.preview === "true";
-  const isAdmin = wantsPreview ? await requireAdminSession() : false;
+  const session = wantsPreview ? await requireAdminSession() : false;
 
   const post = await prisma.post.findFirst({
     where: {
         slug,
-        ...(isAdmin ? {} : { isPublished: true }),
+        ...(session ? {} : { isPublished: true }),
     }
   });
 
@@ -42,11 +42,11 @@ export default async function BlogPostPage({
             <span>Draft</span>
         )}
 
-        {isAdmin && !post.isPublished ? (
+        {session && !post.isPublished ? (
             <span className="ml-2 inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold tracking-widest uppercase border border-[var(--analog-amber)] text-[var(--analog-amber)] bg-[var(--analog-amber)]/10">
                 PREVIEW
             </span>
-        ): null}
+        ) : null}
       </header>
 
       {post.coverImage ? (
