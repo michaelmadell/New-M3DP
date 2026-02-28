@@ -15,6 +15,7 @@ const NAV: NavItem[] = [
   { href: "/admin/quotes", label: "Quotes", icon: "💬" },
   { href: "/admin/blog", label: "Blog / Reviews", icon: "✍️" },
   { href: "/admin/gallery", label: "Gallery", icon: "🖼️" },
+  { href: "/admin/account", label: "Account", icon: "👤" },
 ];
 
 function isActive(pathname: string, href: string) {
