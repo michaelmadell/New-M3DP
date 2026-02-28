@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "node:crypto";
+import bcrypt from "bcrypt";
+import { prisma } from "@/lib/prisma";
 
 const COOKIE_NAME = "admin_session";
 
@@ -10,6 +12,10 @@ function sign(value: string, secret: string) {
   return createHmac("sha256", secret).update(value).digest("hex");
 }
 
+function badRequest(message: string, status: number) {
+  return NextResponse.json({ ok: false, error: message }, { status});
+}
+
 function safeEqual(a: string, b: string) {
   const aBuf = Buffer.from(a);
   const bBuf = Buffer.from(b);
@@ -18,33 +24,34 @@ function safeEqual(a: string, b: string) {
 }
 
 export async function POST(req: Request) {
-  const { password, next } = (await req.json().catch(() => ({}))) as {
+  const { email, password, next } = (await req.json().catch(() => ({}))) as {
+    email?: string;
     password?: string;
     next?: string;
   };
 
-  const adminPassword = process.env.ADMIN_PASSWORD;
   const secret = process.env.ADMIN_SESSION_SECRET;
-
-  if (!adminPassword || !secret) {
-    return NextResponse.json(
-      { ok: false, error: "Server not configured" },
-      { status: 500 }
-    );
+  if (!secret) {
+    return badRequest("Admin session secret not configured", 500);
   }
 
-  if (!password) {
-    return NextResponse.json({ ok: false, error: "Missing password" }, { status: 400 });
-  }
+  const normalizedEmail = typeof email === "string" ?
+    email.trim().toLowerCase() : "";
 
-  // Timing-safe password compare
-  const ok = safeEqual(password, adminPassword);
-  if (!ok) {
-    return NextResponse.json({ ok: false, error: "Invalid password" }, { status: 401 });
-  }
+  if (!normalizedEmail) return badRequest("Email is required", 400);
+  if (!password) return badRequest("Password is required", 400);
+
+  const user = await prisma.user.findUnique({ where: {email: normalizedEmail}})
+
+  if (!user) return badRequest("Invalid email or password", 401);
+
+  if (user.role !== "ADMIN") return badRequest("Unauthorized", 403);
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return badRequest("Invalid email or password", 401);
 
   const exp = Date.now() + SESSION_TTL_MS;
-  const payload = `v1:${exp}`;
+  const payload = `v1:${exp}:${user.id}`;
   const sig = sign(payload, secret);
   const cookieValue = `${payload}.${sig}`;
 

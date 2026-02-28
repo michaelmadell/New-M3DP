@@ -35,8 +35,15 @@ async function isValidSessionCookie(
   const sig = cookieValue.slice(idx + 1);
 
   if (!payload.startsWith("v1:")) return false;
-  const exp = Number(payload.slice(3));
+
+  const parts = payload.split(":");
+  if (parts.length !== 3) return false;
+
+  const exp = Number(parts[1]);
+  const userId = parts[2];
+
   if (!Number.isFinite(exp)) return false;
+  if (!userId) return false;
   if (Date.now() >= exp) return false;
 
   const expected = await hmacSha256Hex(secret, payload);

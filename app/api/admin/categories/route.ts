@@ -7,7 +7,8 @@ function badRequest(message: string) {
 }
 
 export async function GET() {
-  if (!(await requireAdminSession())) {
+  const session = await requireAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -19,7 +20,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  if (!(await requireAdminSession())) {
+  const session = await requireAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

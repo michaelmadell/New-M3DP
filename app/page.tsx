@@ -126,7 +126,7 @@ export default function Home() {
             <h2 className="section-title rounded-lg bg-gradient-to-r from-[var(--color-secondary)] to-[var(--color-primary)] bg-clip-text text-transparent">
               [ SERVICES ]
             </h2>
-            <p className="text-[var(--color-primary-foreground)] text-lg mt-4 max-w-2xl mx-auto">
+            <p className="text-[var(--color-fg)] text-lg mt-4 max-w-2xl mx-auto">
               Bridging the gap between digital precision and analog
               craftsmanship
             </p>
@@ -147,7 +147,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="space-y-4 text-[var(--color-primary-foreground)] mb-8">
+              <div className="space-y-4 text-[var(--color-fg)]/60  mb-8">
                 <div className="flex items-start gap-3">
                   <span className="text-[var(--color-primary)] mt-1">▸</span>
                   <div>
@@ -205,7 +205,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="space-y-4 text-[var(--color-primary-foreground)] mb-8">
+              <div className="space-y-4 text-[var(--color-fg)]/60 mb-8">
                 <div className="flex items-start gap-3">
                   <span className="text-[var(--analog-amber)] mt-1">▸</span>
                   <div>
@@ -261,7 +261,7 @@ export default function Home() {
           <div className="flex justify-between items-end mb-12">
             <div>
               <h2 className="section-title">[ PORTFOLIO ]</h2>
-              <p className="text-[var(--color-primary-foreground)] mt-2">
+              <p className="text-[var(--color-fg)] mt-2">
                 Digital & Film Photography
               </p>
             </div>
@@ -292,7 +292,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section - Bold and centered */}
-      <section className="relative py-32 bg-gradient-to-br from-[var(--tech-slate)]/60 to-[var(--warm-cream)]/60 text-[var(--color-primary-foreground)] text-center overflow-hidden">
+      <section id="grad" className="relative py-32 bg-[var(--light-dark-grad)] text-[var(--color-fg)] text-center overflow-hidden">
         <div className="absolute inset-0 tech-grid opacity-50"></div>
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-5xl lg:text-6xl font-bold mb-6 opacity-0 animate-fade-in">

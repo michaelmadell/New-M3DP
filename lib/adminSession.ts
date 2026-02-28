@@ -14,24 +14,38 @@ function safeEqual(a: string, b: string) {
   return timingSafeEqual(aBuf, bBuf);
 }
 
-export async function requireAdminSession(): Promise<boolean> {
+export type AdminSession = {
+  userId: string;
+  exp: number;
+}
+
+export async function requireAdminSession(): Promise<AdminSession | null> {
   const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!secret) return false;
+  if (!secret) return null;
 
   const cookieValue = (await cookies()).get(COOKIE_NAME)?.value;
-  if (!cookieValue) return false;
+  if (!cookieValue) return null;
 
   const idx = cookieValue.lastIndexOf(".");
-  if (idx <= 0) return false;
+  if (idx <= 0) return null;
 
   const payload = cookieValue.slice(0, idx);
   const sig = cookieValue.slice(idx + 1);
 
-  if (!payload.startsWith("v1:")) return false;
-  const exp = Number(payload.slice(3));
-  if (!Number.isFinite(exp)) return false;
-  if (Date.now() >= exp) return false;
+  if (!payload.startsWith("v1:")) return null;
+
+  const parts = payload.split(":");
+  if (parts.length !== 3) return null;
+
+  const exp = Number(parts[1]);
+  const userId = parts[2];
+
+  if (!Number.isFinite(exp)) return null;
+  if (!userId) return null;
+  if (Date.now() >= exp) return null;
 
   const expected = sign(payload, secret);
-  return safeEqual(sig, expected);
+  if (!safeEqual(sig, expected)) return null;
+
+  return { userId, exp };
 }

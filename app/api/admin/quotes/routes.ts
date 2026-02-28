@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/adminSession";
 
 export async function GET(req: Request) {
-  if (!(await requireAdminSession())) {
+  const session = await requireAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

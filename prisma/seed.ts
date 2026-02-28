@@ -4,9 +4,11 @@ import { PrismaClient } from '../node_modules/.prisma/client'
 import bcrypt from 'bcrypt'
 
 const connectionString = `${process.env.DATABASE_URL}`
+if (!connectionString) {
+  throw new Error("DATABASE_URL not set");
+}
 
 const adapter = new PrismaPg({connectionString})
-
 const prisma = new PrismaClient({ adapter})
 
 async function main() {
@@ -24,14 +26,17 @@ async function main() {
       role: 'ADMIN',
     },
   })
-  console.log('✅ Created admin user:', admin.email)
+  console.log('✅ Ensured admin user:', admin.email)
   console.log('   Default password: admin123 (CHANGE THIS!)')
 
   // Create categories
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { slug: '3d-prints' },
-      update: {},
+      update: {
+        name: '3D Prints',
+        description: 'Pre-designed 3D printed items ready to purchase',
+      },
       create: {
         name: '3D Prints',
         slug: '3d-prints',
@@ -40,7 +45,10 @@ async function main() {
     }),
     prisma.category.upsert({
       where: { slug: 'film-photography' },
-      update: {},
+      update: {
+        name: 'Film Photography',
+        description: 'Film processing and photography services',
+      },
       create: {
         name: 'Film Photography',
         slug: 'film-photography',
@@ -49,7 +57,10 @@ async function main() {
     }),
     prisma.category.upsert({
       where: { slug: 'accessories' },
-      update: {},
+      update: {
+        name: 'Accessories',
+        description: '3D printer accessories and tools',
+      },
       create: {
         name: 'Accessories',
         slug: 'accessories',
@@ -57,12 +68,17 @@ async function main() {
       },
     }),
   ])
-  console.log('✅ Created categories:', categories.length)
+  console.log('✅ Ensured categories:', categories.length)
+
+  const cat3d = categories.find(c => c.slug === '3d-prints')
+  const catFilm = categories.find(c => c.slug === 'film-photography')
 
   // Create sample products
   const products = await Promise.all([
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: { slug: 'replacement-hinge' },
+      update: {},
+      create: {
         name: 'Replacement Hinge',
         slug: 'replacement-hinge',
         description: 'Custom 3D printed replacement hinge for various applications. Durable PLA material.',
@@ -73,8 +89,10 @@ async function main() {
         isActive: true,
       },
     }),
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: { slug: 'e3-film-development' },
+      update: {},
+      create: {
         name: 'E3 Film Development Service',
         slug: 'e3-film-development',
         description: 'Professional E3 Ektachrome film development service. Hand-processed with care.',
@@ -85,8 +103,10 @@ async function main() {
         isActive: true,
       },
     }),
-    prisma.product.create({
-      data: {
+    prisma.product.upsert({
+      where: { slug: 'cable-clip-set' },
+      update: {},
+      create: {
         name: 'Cable Clip Set',
         slug: 'cable-clip-set',
         description: 'Set of 10 3D printed cable management clips. Various sizes included.',
@@ -98,11 +118,13 @@ async function main() {
       },
     }),
   ])
-  console.log('✅ Created sample products:', products.length)
+  console.log('✅ Ensured sample products:', products.length)
 
   // Create a sample blog post
-  const post = await prisma.post.create({
-    data: {
+  const post = await prisma.post.upsert({
+    where: { slug: 'getting-started-with-3d-printing' },
+    update: {},
+    create: {
       title: 'Getting Started with 3D Printing',
       slug: 'getting-started-with-3d-printing',
       content: `
@@ -144,7 +166,7 @@ Ready to start your 3D printing journey? [Get a quote](/quote) for your first cu
       publishedAt: new Date(),
     },
   })
-  console.log('✅ Created sample blog post:', post.title)
+  console.log('✅ Ensured sample blog post:', post.title)
 
   console.log('🎉 Database seeded successfully!')
   console.log('📝 Next steps:')

@@ -11,6 +11,7 @@ export default function AdminLoginPage() {
   const next = searchParams.get("next") ?? "/admin";
   const error = searchParams.get("error");
 
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(
@@ -28,7 +29,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, next }),
+        body: JSON.stringify({ email, password, next }),
       });
 
       const data = (await res.json().catch(() => null)) as
@@ -61,7 +62,7 @@ export default function AdminLoginPage() {
             Sign in
           </h1>
           <p className="text-sm text-[var(--color-fg)]/70 mt-2">
-            Enter the admin password to continue.
+            Sign in with your admin account.
           </p>
         </div>
 
@@ -74,6 +75,21 @@ export default function AdminLoginPage() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-bold mb-2 text-[var(--color-fg)]/80">
+              Email
+            </label>
+            <input
+              type="email"
+              required
+              className="input"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              autoFocus
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold mb-2 text-[var(--color-fg)]/80">
               Password
             </label>
             <input
@@ -82,7 +98,7 @@ export default function AdminLoginPage() {
               className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoFocus
+              autoComplete="current-password"
             />
           </div>
 

@@ -16,6 +16,8 @@
     animation-delay: 0.4s;
   }
 
+  
+
   .card:hover {
     border-color: var(--digital-cyan);
     box-shadow: var(--card-hover-shadow);
@@ -275,6 +277,10 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: background-color 0.3s ease, color 0.3s ease;
     color-scheme: dark light;
+  }
+
+  #grad {
+    background: linear-gradient(135deg, var(--color-teal-800) 0%, var(--color-bg) 50%);
   }
 
   ::-webkit-scrollbar {

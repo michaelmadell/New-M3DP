@@ -7,7 +7,8 @@ function badRequest(message: string) {
 }
 
 export async function GET(req: Request) {
-  if (!(await requireAdminSession())) {
+  const session = await requireAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -29,10 +30,10 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!(await requireAdminSession())) {
+  const session = await requireAdminSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
   const body = (await req.json().catch(() => null)) as
     | {
         name?: string;
