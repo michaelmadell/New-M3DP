@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { writeFile } from 'fs/promises'
 import path from 'path'
 import crypto from 'node:crypto'
@@ -32,8 +32,6 @@ function safeBaseName(filename: string) {
 function badRequest(error: string, status = 400) {
   return NextResponse.json({ error }, { status });
 }
-
-const prisma = new PrismaClient()
 
 export async function POST(request: NextRequest) {
   try {

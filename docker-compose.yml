@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: newm3dp-db
+    environment:
+      POSTGRES_DB: prisma
+      POSTGRES_USER: prisma
+      POSTGRES_PASSWORD: prisma
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prisma -d prisma"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Build the image once and reuse it for web + migrate
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Dummy DATABASE_URL for prisma generate during docker build
+        DATABASE_URL: postgresql://build:build@localhost:5432/build?schema=public
+    image: newm3dp-app:latest
+    container_name: newm3dp-web
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://prisma:prisma@db:5432/prisma?schema=public
+      ADMIN_SESSION_SECRET: "change-me-to-a-long-random-string"
+      # Optional SMTP settings
+      # SMTP_HOST: ""
+      # SMTP_PORT: "587"
+      # SMTP_USER: ""
+      # SMTP_PASSWORD: ""
+      # SMTP_FROM: ""
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - uploads:/app/public/uploads
+
+  migrate:
+    image: newm3dp-app:latest
+    container_name: newm3dp-migrate
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://prisma:prisma@db:5432/prisma?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-lc", "npx prisma migrate deploy"]
+    restart: "no"
+
+volumes:
+  db_data:
+  uploads:

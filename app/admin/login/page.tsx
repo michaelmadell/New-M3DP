@@ -1,10 +1,10 @@
 "use client";
 
+import { JSX, Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
 import { Button } from "@/components/Button";
 
-export default function AdminLoginPage() {
+function AdminLoginInner(): JSX.Element {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -38,7 +38,9 @@ export default function AdminLoginPage() {
         | null;
 
       if (!res.ok || !data || data.ok === false) {
-        setMessage(data && "error" in data ? data.error ?? "Login failed" : "Login failed");
+        setMessage(
+          data && "error" in data ? data.error ?? "Login failed" : "Login failed"
+        );
         return;
       }
 
@@ -113,5 +115,21 @@ export default function AdminLoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage(): JSX.Element {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+          <div className="w-full max-w-md bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 text-sm text-[var(--color-fg)]/70">
+            Loading…
+          </div>
+        </div>
+      }
+    >
+      <AdminLoginInner />
+    </Suspense>
   );
 }

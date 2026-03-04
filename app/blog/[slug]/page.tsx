@@ -4,6 +4,47 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import { requireAdminSession } from "@/lib/adminSession";
+import type { Metadata } from "next";
+
+const siteUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://monkeys3dprints.co.uk";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  const post = await prisma.post.findFirst({
+    where: { slug, isPublished: true },
+    select: { title: true, excerpt: true, coverImage: true, publishedAt: true, updatedAt: true },
+  });
+
+  if (!post) return {};
+
+  const canonical = `/blog/${slug}`;
+
+  return {
+    title: post.title,
+    description: post.excerpt ?? undefined,
+    alternates: { canonical },
+    openGraph: {
+      type: "article",
+      url: `${siteUrl}${canonical}`,
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      images: post.coverImage ? [{ url: post.coverImage }] : undefined,
+      publishedTime: post.publishedAt?.toISOString(),
+      modifiedTime: post.updatedAt?.toISOString(),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      images: post.coverImage ? [post.coverImage] : undefined,
+    },
+  };
+}
 
 export default async function BlogPostPage({
   params,
@@ -28,7 +69,7 @@ export default async function BlogPostPage({
   if (!post) notFound();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-16 space-y-8">
+    <div className="max-w-3xl px-4 py-16 mx-auto space-y-8">
       <header className="space-y-2">
         <div className="text-xs tracking-[0.3em] font-bold text-[var(--color-muted)]">
           [ BLOG ]
